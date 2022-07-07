@@ -1,6 +1,8 @@
+from strings import get_string
+from YukkiMusic.misc import SUDOERS
+from YukkiMusic.utils.database.memorydatabase import is_nonadmin_chat
 import random
-from config.config import BANNED_USERS
-from YukkiMusic.utils.decorators.admins import AdminRightsCheck
+from config import BANNED_USERS, adminlist
 from pyrogram import filters
 from pyrogram.types import Message
 from YukkiMusic import app
@@ -50,6 +52,21 @@ async def get_assistant(chat_id: int) -> str:
         else:
             userbot = await set_assistant(chat_id)
             return userbot
+
+def AdminRightsCheck(mystic):
+    async def wrapper(client, message):
+        _ = get_string("en")
+        is_non_admin = await is_nonadmin_chat(message.chat.id)
+        if not is_non_admin:
+            if message.from_user.id not in SUDOERS:
+                admins = adminlist.get(message.chat.id)
+                if not admins:
+                    return await message.reply_text(_["admin_18"])
+                else:
+                    if message.from_user.id not in admins:
+                        return await message.reply_text(_["admin_19"])
+        return await mystic(client, message)
+    return wrapper
 
 @app.on_message(
     filters.command("checkassistant")
